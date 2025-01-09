@@ -1,0 +1,42 @@
+#!/usr/bin/env python
+# coding: utf-8
+
+import pandas as pd
+import os
+from tqdm import tqdm
+
+if __name__ == '__main__':
+    cluster_merged_preds = pd.read_csv('../data/interim/ecor_predictions.csv')
+    putative_novel_ids = cluster_merged_preds.loc[~cluster_merged_preds['defense_homolog'] & 
+                                                  (cluster_merged_preds['beaker_prediction'] > 0.5), 
+                                                  'product_accession'].drop_duplicates()
+    len(putative_novel_ids)
+    putative_novel_id_f = '../data/interim/ecor_putative_novel_ids.txt'
+    putative_novel_ids.to_csv(putative_novel_id_f, index=False)
+    putative_novel_seq_f = '../data/interim/ecor_putative_novel_seqs.faa'
+    os.system(' '.join(['conda run -n beaker', 
+                        'seqtk subseq',
+                        '../data/interim/ecor_unique_seqs.faa', 
+                        putative_novel_id_f, '>',
+                        putative_novel_seq_f]))
+    msa_out_dir = '../data/interim/ecor_putative_novel_msas/'
+    if 'ecor_putative_novel_msas' not in os.listdir('../data/interim/'):
+        os.mkdir(msa_out_dir)
+    prefilt_msa_dir = '../data/interim/pd_prefilt_msas/'
+    prefilt_msas = [x for x in os.listdir(prefilt_msa_dir) if '.a3m' in x]
+    novel_id_stubs = putative_novel_ids.str.split('\.', expand=True)[0].to_list()
+    for f in tqdm(prefilt_msas):
+        if f.split('.')[0] in novel_id_stubs:
+            os.system(' '.join(['cp', prefilt_msa_dir + f, msa_out_dir]))
+    raw_out_dir ='../data/interim/ecor_putative_novel_pfam_df_alignments/'
+    parsed_out_file='../data/interim/ecor_putative_novel_pfam_df_domains.csv'
+    os.system(' '.join(['conda run -n hhpred python', 
+                        '~/Documents/hhpred/code/hhpred.py', 
+                        '--raw_out_dir', raw_out_dir,  
+                        '--parsed_out_file', parsed_out_file, 
+                        '--dbs pfam df', 
+                        '--in_fasta', putative_novel_seq_f,  
+                        '--n_iter 2', 
+                        '--alignment_dir', msa_out_dir, 
+                        '--n_jobs 40']))
+
