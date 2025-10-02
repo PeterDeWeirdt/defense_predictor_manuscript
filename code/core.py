@@ -7,8 +7,7 @@ import hashlib
 
 bw_color_palette = sns.color_palette(['#e69f00', '#56b4e9', '#009e73', '#f0e442', '#0072b2', '#d55e00', '#cc79a7'])
 # Check 13_02_01 for cutoffs
-med_log_odds_cutoff = (6.808952 + 7.533735)/2 # greater than this, but less than high is in the medium category
-high_log_odds_cutoff = (10.765768 + 11.835149)/2 # greater than this is in the high probability category
+med_log_odds_cutoff = 4 # greater than this, but less than high is in the medium category
 
 def get_record_metadata(r):
     r_dict = vars(r)
@@ -168,4 +167,4 @@ def chunks(lst, n):
     """Yield successive n-sized chunks from lst."""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
-        
+
